@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -e
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+
+echo "-----> Installing LastPass CLI"
+
+mkdir -p $BUILD_DIR/vendor/lastpass-cli
+mkdir -p $BUILD_DIR/.profile.d
+
+cd /tmp
+git clone --depth=1 https://github.com/lastpass/lastpass-cli.git
+cd lastpass-cli
+
+# Check if cmake is available
+if ! command -v cmake &> /dev/null; then
+    echo "CMake not found! Make sure you've included a buildpack or Aptfile to install cmake and dependencies."
+    exit 1
+fi
+
+# Configure and build
+cmake . -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/vendor/lastpass-cli
+make -j$(nproc)
+make install
+
+cd /
+rm -rf /tmp/lastpass-cli
+
+# Add vendor/lastpass-cli/bin to PATH at runtime
+cat <<EOF > $BUILD_DIR/.profile.d/lastpass.sh
+export PATH="\$PATH:\$HOME/vendor/lastpass-cli/bin"
+EOF
+
+echo "-----> LastPass CLI installation completed"

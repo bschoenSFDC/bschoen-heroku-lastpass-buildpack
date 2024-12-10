@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A simple detect script that always detects
+echo "lastpass-cli"
+exit 0
