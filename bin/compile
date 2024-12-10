@@ -22,7 +22,7 @@ cd /tmp
 git clone --depth=1 https://github.com/lastpass/lastpass-cli.git
 cd lastpass-cli
 
-cmake . -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/vendor/lastpass-cli -DINSTALL_BASH_COMPLETION=OFF
+cmake -DINSTALL_BASH_COMPLETION=OFF -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/vendor/lastpass-cli .
 make -j$(nproc)
 make install
 
