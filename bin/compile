@@ -2,7 +2,7 @@
 BUILD_DIR=$1
 CACHE_DIR=$2
 
-set -e
+set -ex
 echo "-----> Installing LastPass CLI"
 
 # Ensure that the binaries installed by apt buildpack are visible at build time
