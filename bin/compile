@@ -1,26 +1,38 @@
-#!/usr/bin/env bash
-
-set -e
-
+# Set variables
 BUILD_DIR=$1
 CACHE_DIR=$2
 
+set -e
 echo "-----> Installing LastPass CLI"
 
+# Ensure that the binaries installed by apt buildpack are visible at build time
+export PATH="$BUILD_DIR/.apt/usr/bin:$PATH"
+export LD_LIBRARY_PATH="$BUILD_DIR/.apt/usr/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="$BUILD_DIR/.apt/usr/lib/pkgconfig:$BUILD_DIR/.apt/usr/share/pkgconfig:$PKG_CONFIG_PATH"
+
+# (Optional) Set CMAKE_ROOT if needed. After apt installs cmake, it often resides in:
+# $BUILD_DIR/.apt/usr/share/cmake-<version>
+# Check the exact version directory by listing it:
+# ls $BUILD_DIR/.apt/usr/share
+CMAKE_VERSION_DIR=$(ls $BUILD_DIR/.apt/usr/share | grep "^cmake-")
+if [ -n "$CMAKE_VERSION_DIR" ]; then
+    export CMAKE_ROOT="$BUILD_DIR/.apt/usr/share/$CMAKE_VERSION_DIR"
+fi
+
+# Debug info
+cmake --version
+echo "CMAKE_ROOT: $CMAKE_ROOT"
+
+# Create vendor dir
 mkdir -p $BUILD_DIR/vendor/lastpass-cli
 mkdir -p $BUILD_DIR/.profile.d
 
+# Fetch and build lastpass-cli
 cd /tmp
 git clone --depth=1 https://github.com/lastpass/lastpass-cli.git
 cd lastpass-cli
 
-# Check if cmake is available
-if ! command -v cmake &> /dev/null; then
-    echo "CMake not found! Make sure you've included a buildpack or Aptfile to install cmake and dependencies."
-    exit 1
-fi
-
-# Configure and build
+# Run CMake with explicit install prefix
 cmake . -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/vendor/lastpass-cli
 make -j$(nproc)
 make install
@@ -28,7 +40,7 @@ make install
 cd /
 rm -rf /tmp/lastpass-cli
 
-# Add vendor/lastpass-cli/bin to PATH at runtime
+# Make lpass available at runtime
 cat <<EOF > $BUILD_DIR/.profile.d/lastpass.sh
 export PATH="\$PATH:\$HOME/vendor/lastpass-cli/bin"
 EOF
